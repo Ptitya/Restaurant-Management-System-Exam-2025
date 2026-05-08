@@ -1,5 +1,6 @@
 // src/routes/menu.ts
 import { Router } from 'express'
+import { Category } from '@prisma/client'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole } from '../middleware/auth'
 
@@ -50,7 +51,7 @@ router.post('/', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const { name, description, price, category, imageUrl } = req.body as {
       name?: string; description?: string; price?: number
-      category?: string; imageUrl?: string
+      category?: Category; imageUrl?: string
     }
     if (!name || price === undefined) {
       res.status(400).json({ error: 'Name and price required' }); return
