@@ -8,7 +8,7 @@ import { authenticate, JWT_SECRET } from '../middleware/auth'
 const router = Router()
 
 // POST /api/auth/login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, password } = req.body as { username?: string; password?: string }
     if (!username || !password) {
@@ -33,9 +33,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
 // GET /api/auth/me
 router.get('/me', authenticate, (req: Request, res: Response) => {
-  // ถ้า middleware `authenticate` เพิ่ม `user` เข้าไปใน req
-  // ควรประกาศ type ของ Request ให้รองรับ เช่นสร้าง interface RequestWithUser
-  res.json({ user: (req as any).user })
+  res.json({ user: req.user })
 })
 
 export default router

@@ -1,12 +1,12 @@
 // src/routes/orders.ts
-import { Router } from 'express'
+import { Router, Request, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole } from '../middleware/auth'
 
 const router = Router()
 
 // GET /api/orders/tables
-router.get('/tables', authenticate, async (_req, res) => {
+router.get('/tables', authenticate, async (_req: Request, res: Response): Promise<void> => {
   try {
     const tables = await prisma.restaurantTable.findMany({ orderBy: { tableNumber: 'asc' } })
     res.json(tables)
@@ -16,7 +16,7 @@ router.get('/tables', authenticate, async (_req, res) => {
 })
 
 // GET /api/orders
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { status, tableId } = req.query as { status?: string; tableId?: string }
     const orders = await prisma.order.findMany({
@@ -38,7 +38,7 @@ router.get('/', authenticate, async (req, res) => {
 })
 
 // GET /api/orders/:id
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: Number(req.params.id) },
@@ -57,8 +57,8 @@ router.get('/:id', authenticate, async (req, res) => {
 })
 
 // POST /api/orders — open new order
-// ⚠️ BUG-002 [Double Booking]: No check for existing open order on same table
-router.post('/', authenticate, async (req, res) => {
+// ✅ แก้ไข BUG-002 [Double Booking]: เพิ่มการตรวจสอบบิลที่เปิดค้างไว้ที่โต๊ะเดียวกัน
+router.post('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { tableId, note } = req.body as { tableId?: number; note?: string }
     if (!tableId) { res.status(400).json({ error: 'tableId required' }); return }
@@ -66,9 +66,18 @@ router.post('/', authenticate, async (req, res) => {
     const table = await prisma.restaurantTable.findUnique({ where: { id: tableId } })
     if (!table) { res.status(404).json({ error: 'Table not found' }); return }
 
-    // ⚠️ BUG-002: Missing duplicate check — allows two orders on same table
-    // Fix: const existing = await prisma.order.findFirst({ where: { tableId, status: 'open' } })
-    //      if (existing) { res.status(409).json({ error: 'Table already has an open order' }); return }
+    // ตรวจสอบว่าโต๊ะนี้มีบิลที่ยังไม่คิดเงิน (open หรือ confirmed) อยู่หรือไม่
+    const existing = await prisma.order.findFirst({ 
+      where: { 
+        tableId, 
+        status: { in: ['open', 'confirmed'] } 
+      } 
+    })
+    
+    if (existing) { 
+      res.status(409).json({ error: 'Table already has an active order' }); 
+      return 
+    }
 
     const [order] = await prisma.$transaction([
       prisma.order.create({
@@ -84,7 +93,7 @@ router.post('/', authenticate, async (req, res) => {
 })
 
 // POST /api/orders/:id/items
-router.post('/:id/items', authenticate, async (req, res) => {
+router.post('/:id/items', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const orderId = Number(req.params.id)
     const { menuItemId, quantity = 1 } = req.body as { menuItemId?: number; quantity?: number }
@@ -109,7 +118,7 @@ router.post('/:id/items', authenticate, async (req, res) => {
 
     // Recalculate total
     const allItems = await prisma.orderItem.findMany({ where: { orderId } })
-    const total = allItems.reduce((s: number, i: {subtotal: any}) => s + Number(i.subtotal), 0)
+    const total = allItems.reduce((s: number, i: any) => s + Number(i.subtotal), 0)
     await prisma.order.update({ where: { id: orderId }, data: { totalAmount: total } })
 
     res.status(201).json({ item, totalAmount: total })
@@ -119,7 +128,7 @@ router.post('/:id/items', authenticate, async (req, res) => {
 })
 
 // DELETE /api/orders/:id/items/:itemId
-router.delete('/:id/items/:itemId', authenticate, async (req, res) => {
+router.delete('/:id/items/:itemId', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const orderId = Number(req.params.id)
     const itemId  = Number(req.params.itemId)
@@ -131,7 +140,7 @@ router.delete('/:id/items/:itemId', authenticate, async (req, res) => {
     await prisma.orderItem.deleteMany({ where: { id: itemId, orderId } })
 
     const allItems = await prisma.orderItem.findMany({ where: { orderId } })
-    const total = allItems.reduce((s: number, i: {subtotal: any}) => s + Number(i.subtotal), 0)
+    const total = allItems.reduce((s: number, i: any) => s + Number(i.subtotal), 0)
     await prisma.order.update({ where: { id: orderId }, data: { totalAmount: total } })
 
     res.json({ message: 'Item removed', totalAmount: total })
@@ -141,7 +150,7 @@ router.delete('/:id/items/:itemId', authenticate, async (req, res) => {
 })
 
 // PUT /api/orders/:id/confirm
-router.put('/:id/confirm', authenticate, async (req, res) => {
+router.put('/:id/confirm', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const orderId = Number(req.params.id)
     const order = await prisma.order.findUnique({
@@ -158,7 +167,7 @@ router.put('/:id/confirm', authenticate, async (req, res) => {
 })
 
 // PUT /api/orders/:id/cancel
-router.put('/:id/cancel', authenticate, requireRole('admin', 'cashier'), async (req, res) => {
+router.put('/:id/cancel', authenticate, requireRole('admin', 'cashier'), async (req: Request, res: Response): Promise<void> => {
   try {
     const orderId = Number(req.params.id)
     const order = await prisma.order.findUnique({ where: { id: orderId } })

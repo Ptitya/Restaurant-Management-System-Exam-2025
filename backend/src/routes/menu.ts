@@ -7,15 +7,21 @@ import { authenticate, requireRole } from '../middleware/auth'
 const router = Router()
 
 // GET /api/menu — list / search
-router.get('/', authenticate, async (req: Request, res: Response) => {
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { search, category } = req.query as { search?: string; category?: string }
 
     if (search) {
-      // ⚠️ BUG-003: ใช้ Raw query แบบไม่ parameterized → SQL Injection
-      const results = await prisma.$queryRawUnsafe(
-        `SELECT * FROM menu_items WHERE (name ILIKE '%${search}%' OR description ILIKE '%${search}%') AND "isAvailable" = true`
-      )
+      // ✅ แก้ไข BUG-003: เปลี่ยนจาก Raw Query ที่เสี่ยง SQL Injection มาใช้ Prisma Client
+      const results = await prisma.menuItem.findMany({
+        where: {
+          isAvailable: true,
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } }
+          ]
+        }
+      })
       res.json(results)
       return
     }
@@ -34,7 +40,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
 })
 
 // GET /api/menu/:id
-router.get('/:id', authenticate, async (req: Request, res: Response) => {
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const item = await prisma.menuItem.findUnique({ where: { id: Number(req.params.id) } })
     if (!item) {
@@ -48,7 +54,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 })
 
 // POST /api/menu — admin only
-router.post('/', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+router.post('/', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, description, price, category, imageUrl } = req.body as {
       name?: string; description?: string; price?: number
@@ -65,8 +71,9 @@ router.post('/', authenticate, requireRole('admin'), async (req: Request, res: R
   }
 })
 
-// PUT /api/menu/:id — BUG-004: requireRole('admin') missing
-router.put('/:id', authenticate, async (req: Request, res: Response) => {
+// PUT /api/menu/:id — admin only
+// ✅ แก้ไข BUG-004: เพิ่ม requireRole('admin') เพื่อป้องกันสิทธิ์การเข้าถึง
+router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
     const item = await prisma.menuItem.findUnique({ where: { id: Number(req.params.id) } })
     if (!item) {
@@ -88,7 +95,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 })
 
 // DELETE /api/menu/:id — soft delete, admin only
-router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
     const item = await prisma.menuItem.findUnique({ where: { id: Number(req.params.id) } })
     if (!item) {

@@ -1,14 +1,13 @@
 // src/routes/payments.ts
-import { Router } from 'express'
+import { Router, Request, Response } from 'express'
 import prisma from '../lib/prisma'
 import { authenticate, requireRole } from '../middleware/auth'
 
 const router = Router()
 
 // POST /api/payments
-// ⚠️ BUG-001 [Critical]: No validation that amountPaid >= totalAmount
-// Negative change is stored and returned when customer underpays
-router.post('/', authenticate, requireRole('admin', 'cashier'), async (req, res) => {
+// ✅ แก้ไข BUG-001 [Critical]: เพิ่มการตรวจสอบจำนวนเงินที่จ่ายว่าห้ามน้อยกว่ายอดรวม
+router.post('/', authenticate, requireRole('admin', 'cashier'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { orderId, amountPaid, method } = req.body as {
       orderId?: number; amountPaid?: number; method?: 'cash' | 'card' | 'qr'
@@ -32,10 +31,12 @@ router.post('/', authenticate, requireRole('admin', 'cashier'), async (req, res)
     const totalAmount = Number(order.totalAmount)
     const paid = Number(amountPaid)
 
-    // ⚠️ BUG-001: Missing underpayment validation
-    // Fix: if (paid < totalAmount) { res.status(400).json({ error: 'Insufficient payment amount' }); return }
+    // ✅ แก้ไข BUG-001: ป้องกันลูกค้าจ่ายเงินไม่ครบ (Underpayment)
+    if (paid < totalAmount) { 
+      res.status(400).json({ error: 'Insufficient payment amount' })
+      return 
+    }
 
-    // ⚠️ BUG-001: change will be NEGATIVE if paid < totalAmount
     const change = paid - totalAmount
 
     const [payment] = await prisma.$transaction([
@@ -53,7 +54,7 @@ router.post('/', authenticate, requireRole('admin', 'cashier'), async (req, res)
 })
 
 // GET /api/payments/:orderId
-router.get('/:orderId', authenticate, async (req, res) => {
+router.get('/:orderId', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const payment = await prisma.payment.findUnique({
       where: { orderId: Number(req.params.orderId) },
