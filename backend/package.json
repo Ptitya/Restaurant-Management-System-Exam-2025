@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/app.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -16,7 +16,8 @@
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
@@ -33,11 +34,14 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.0.0",
     "@types/supertest": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "^1.6.0",
     "prisma": "^5.14.0",
     "supertest": "^7.0.0",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5",
-    "vitest": "^4.1.5"
+    "vitest": "^1.6.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

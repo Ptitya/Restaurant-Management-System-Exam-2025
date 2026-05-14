@@ -1,8 +1,13 @@
 FROM node:22-slim AS deps
 WORKDIR /app
 
-# Install netcat and openssl for database readiness check and Prisma
-RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd openssl wget && rm -rf /var/lib/apt/lists/*
+# Install netcat, openssl, wget, and curl for database readiness check and Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    netcat-openbsd \
+    openssl \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -20,8 +25,12 @@ RUN npm run build
 FROM node:22-slim AS runner
 WORKDIR /app
 
-# Runtime OpenSSL and wget required by Prisma and health check
-RUN apt-get update && apt-get install -y --no-install-recommends openssl wget && rm -rf /var/lib/apt/lists/*
+# Runtime OpenSSL, wget, and curl required by Prisma and health check
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
