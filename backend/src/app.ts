@@ -15,11 +15,11 @@ const app = express()
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }))
 app.use(express.json())
 
-app.use('/api/auth',     authRoutes)
-app.use('/api/menu',     menuRoutes)
-app.use('/api/orders',   orderRoutes)
-app.use('/api/payments', paymentRoutes)
-app.use('/api/reports',  reportRoutes)
+app.use('/auth',     authRoutes)
+app.use('/menu',     menuRoutes)
+app.use('/orders',   orderRoutes)
+app.use('/payments', paymentRoutes)
+app.use('/reports',  reportRoutes)
 
 // health check route พร้อม type ของ req/res
 app.get('/api/health', (_req: Request, res: Response) =>
