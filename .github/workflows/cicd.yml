@@ -1,0 +1,36 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main   # ✅ 1) Trigger เมื่อ push ไปที่ main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22   # ✅ 2) ติดตั้ง Node.js v22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Unit Tests
+        run: npm run test    # ✅ 3) รัน unit test ของ backend
+
+      - name: Install Newman 5.5.1
+        run: npm install -g newman@5.5.1
+
+      - name: Run Newman Tests
+        run: |
+          newman run tests/postman/RMS-TestSuite-v2.json \
+            -e tests/postman/env-local.json \
+            --reporters cli,json \
+            --reporter-json-export newman-report.json
+          # ✅ 4) ติดตั้งและรัน Newman 5.5.1
