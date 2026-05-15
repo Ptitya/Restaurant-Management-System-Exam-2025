@@ -3,11 +3,25 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main   # ✅ 1) Trigger เมื่อ push ไปที่ main
+      - main
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      # สร้าง Database ชั่วคราวสำหรับการเทสใน Pipeline
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
@@ -16,21 +30,36 @@ jobs:
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 22   # ✅ 2) ติดตั้ง Node.js v22
+          node-version: 22
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run Unit Tests
-        run: npm run test    # ✅ 3) รัน unit test ของ backend
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      - name: Install Newman 5.5.1
-        run: npm install -g newman@5.5.1
+      - name: Run Database Push (Migrate)
+        run: npx prisma db push
+        env:
+          DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
+
+      - name: Run Unit Tests (Vitest)
+        run: npm run test
+        env:
+          DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
+
+      - name: Start Backend Server
+        # ใช้เครื่องมือ wait-on เพื่อรอให้ Server พร้อมก่อนค่อยรัน Newman
+        run: |
+          npm run dev & 
+          npx wait-on http://localhost:3001/api/health --timeout 60000
+        env:
+          DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
+          JWT_SECRET: "test-secret-key"
 
       - name: Run Newman Tests
         run: |
-          newman run tests/postman/RMS-TestSuite-v2.json \
+          npx newman run tests/postman/RMS-TestSuite-v2.json \
             -e tests/postman/env-local.json \
             --reporters cli,json \
             --reporter-json-export newman-report.json
-          # ✅ 4) ติดตั้งและรัน Newman 5.5.1

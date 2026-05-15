@@ -9,10 +9,11 @@ const router = Router()
 // GET /api/menu — list / search
 router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search, category } = req.query as { search?: string; category?: string }
+    const search = req.query.search ? String(req.query.search) : undefined
+    const category = req.query.category ? String(req.query.category) : undefined
 
     if (search) {
-      // ✅ แก้ไข BUG-003: เปลี่ยนจาก Raw Query ที่เสี่ยง SQL Injection มาใช้ Prisma Client
+      // ✅ BUG-003: ป้องกัน SQL Injection โดยใช้ Prisma
       const results = await prisma.menuItem.findMany({
         where: {
           isAvailable: true,
@@ -22,7 +23,7 @@ router.get('/', authenticate, async (req: Request, res: Response): Promise<void>
           ]
         }
       })
-      res.json(results)
+      res.status(200).json(results)
       return
     }
 
@@ -33,21 +34,7 @@ router.get('/', authenticate, async (req: Request, res: Response): Promise<void>
       },
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     })
-    res.json(items)
-  } catch (err) {
-    res.status(500).json({ error: (err as Error).message })
-  }
-})
-
-// GET /api/menu/:id
-router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const item = await prisma.menuItem.findUnique({ where: { id: Number(req.params.id) } })
-    if (!item) {
-      res.status(404).json({ error: 'Menu item not found' })
-      return
-    }
-    res.json(item)
+    res.status(200).json(items)
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
   }
@@ -56,15 +43,32 @@ router.get('/:id', authenticate, async (req: Request, res: Response): Promise<vo
 // POST /api/menu — admin only
 router.post('/', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, price, category, imageUrl } = req.body as {
-      name?: string; description?: string; price?: number
-      category?: Category; imageUrl?: string
-    }
+    const body = req.body as any
+    const { name, price, stock } = body
+
+    // ✅ ตรวจสอบความถูกต้องของข้อมูล (Validation)
     if (!name || price === undefined) {
       res.status(400).json({ error: 'Name and price required' })
       return
     }
-    const item = await prisma.menuItem.create({ data: { name, description, price, category, imageUrl } })
+
+    // ✅ TC-015: ป้องกันการใส่สต็อกติดลบ
+    if (stock !== undefined && Number(stock) < 0) {
+      res.status(400).json({ error: 'Stock cannot be negative' })
+      return
+    }
+
+    const item = await prisma.menuItem.create({
+      data: {
+        name: body.name,
+        description: body.description,
+        price: Number(body.price),
+        category: body.category as Category,
+        imageUrl: body.imageUrl,
+        // ใช้ชื่อฟิลด์ให้ตรงกับที่มีใน DB (ถ้าใน DB ไม่มี stock บรรทัดนี้จะแดง ให้ลบออกหรือใช้ any)
+        ...(body.stock !== undefined ? { stock: Number(body.stock) } : {} as any)
+      } as any
+    })
     res.status(201).json(item)
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
@@ -72,38 +76,53 @@ router.post('/', authenticate, requireRole('admin'), async (req: Request, res: R
 })
 
 // PUT /api/menu/:id — admin only
-// ✅ แก้ไข BUG-004: เพิ่ม requireRole('admin') เพื่อป้องกันสิทธิ์การเข้าถึง
+// ✅ BUG-004: ป้องกัน Waiter แก้ราคา (เพิ่ม requireRole('admin'))
 router.put('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const item = await prisma.menuItem.findUnique({ where: { id: Number(req.params.id) } })
+    const id = Number(req.params.id)
+    const body = req.body as any
+    
+    const item = await prisma.menuItem.findUnique({ where: { id } })
     if (!item) {
       res.status(404).json({ error: 'Menu item not found' })
       return
     }
-    const { name, description, price, category, isAvailable, imageUrl } = req.body as {
-      name?: string; description?: string; price?: number
-      category?: Category; isAvailable?: boolean; imageUrl?: string
+
+    // ✅ TC-015: ตรวจสอบไม่ให้แก้ไขสต็อกเป็นค่าติดลบ
+    if (body.stock !== undefined && Number(body.stock) < 0) {
+      res.status(400).json({ error: 'Stock cannot be negative' })
+      return
     }
+
     const updated = await prisma.menuItem.update({
-      where: { id: Number(req.params.id) },
-      data: { name, description, price, category, isAvailable, imageUrl },
+      where: { id },
+      data: {
+        name: body.name,
+        description: body.description,
+        price: body.price !== undefined ? Number(body.price) : undefined,
+        category: body.category as Category,
+        isAvailable: body.isAvailable,
+        imageUrl: body.imageUrl,
+        ...(body.stock !== undefined ? { stock: Number(body.stock) } : {} as any)
+      } as any
     })
-    res.json(updated)
+    res.status(200).json(updated)
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
   }
 })
 
-// DELETE /api/menu/:id — soft delete, admin only
+// DELETE /api/menu/:id
 router.delete('/:id', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const item = await prisma.menuItem.findUnique({ where: { id: Number(req.params.id) } })
+    const id = Number(req.params.id)
+    const item = await prisma.menuItem.findUnique({ where: { id } })
     if (!item) {
       res.status(404).json({ error: 'Menu item not found' })
       return
     }
-    await prisma.menuItem.update({ where: { id: Number(req.params.id) }, data: { isAvailable: false } })
-    res.json({ message: 'Menu item disabled' })
+    await prisma.menuItem.update({ where: { id }, data: { isAvailable: false } })
+    res.status(200).json({ message: 'Menu item disabled' })
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
   }

@@ -10,9 +10,9 @@
 
 ระบบจัดการร้านอาหาร (RMS) สำหรับจัดการเมนู รับออเดอร์ ชำระเงิน และดูรายงานยอดขาย
 
-**นักศึกษา:** _กรอกชื่อ-สกุล_
-**รหัสนักศึกษา:** _กรอกรหัส_
-**วันที่สอบ:** _วันที่_
+**นักศึกษา:** นางสาวปทิตญา ภูกิจคุณาเดชากร
+**รหัสนักศึกษา:** 68030151
+**วันที่สอบ:** 08/05/2569
 
 ---
 
@@ -33,9 +33,9 @@
 
 | Service     | URL |
 |-------------|-----|
-| Frontend    | https://YOUR-FRONTEND.vercel.app |
-| Backend API | https://YOUR-BACKEND.onrender.com |
-| Health Check| https://YOUR-BACKEND.onrender.com/api/health |
+| Frontend    | https://restaurant-frontend-delta-inky.vercel.app |
+| Backend API | https://restaurant-backend-ia1q.onrender.com |
+| Health Check| https://restaurant-backend-ia1q.onrender.com/api/health |
 
 ---
 
@@ -51,7 +51,15 @@
 - [ ] Payment Processing (Cash/Card/QR)
 - [ ] Sales Reports
 
-**Out of Scope:** _ระบุสิ่งที่ไม่ทดสอบ_
+**Out of Scope:** 
+| Feature       | เหตุผลที่ไม่ทดสอบ |
+|---------------|--------------------|
+| Performance Load Test (JMeter) | ไม่อยู่ในขอบเขตของข้อสอบนี้ |
+| Security Penetration Test | การเจาะระบบต้องใช้เครื่องมือและทีมเฉพาะ ไม่ครอบคลุมการสอบ |
+| Cloud Deployment (Production) | แม้มีการใช้ Neon/Vercel แต่การสอบไม่ครอบคลุมการ deploy แบบ production-scale หรือ multi-cloud integration |
+| Third-Party Payment Gateway | ใช้ mock data ไม่เชื่อมต่อระบบจริง |
+| Data Migration | ไม่ครอบคลุมการย้ายข้อมูลจากระบบเก่าเข้าสู่ระบบใหม่ |
+| Backup & Disaster Recovery | การสอบไม่ทดสอบการกู้คืนระบบหรือการจัดการเมื่อระบบล่ม |
 
 ### Test Approach
 
@@ -67,8 +75,8 @@
 |-----------|--------------|
 | Node.js   | 22 LTS |
 | PostgreSQL | 16 (Neon.tech) |
-| Browser   | _กรอก_ |
-| OS        | _กรอก_ |
+| Browser   | Chrome 148 |
+| OS        | Windows 11 |
 
 ### Entry/Exit Criteria
 
@@ -79,8 +87,11 @@
 
 | ความเสี่ยง | ผลกระทบ | Priority |
 |-----------|---------|---------|
-| _กรอก_ | _กรอก_ | P1 |
-| _กรอก_ | _กรอก_ | P2 |
+| Payment Failure | 	ร้านไม่สามารถรับเงินได้ → เสียรายได้ทันทีและกระทบความเชื่อมั่นลูกค้า |	P1 |
+| Order Mismanagement	| ออเดอร์ไม่ถูกส่งเข้าครัว → ลูกค้าไม่พอใจและอาจสูญเสียลูกค้าประจำ |	P2 |
+| Inventory Inaccuracy |	สต๊อกไม่ตรง ทำให้วัตถุดิบหมดโดยไม่รู้ → อาหารบางเมนูขายไม่ได้ |	P2 |
+| Authentication Failure |	พนักงานเข้าระบบไม่ได้ หรือมีการเข้าถึงโดยไม่ได้รับอนุญาต → กระทบการทำงานและความปลอดภัย |	P1 |
+| Table Management Error	| โต๊ะไม่ถูกจองหรือปล่อยว่างผิดพลาด → ลูกค้ารอนานหรือเกิดความสับสน |	P3 |
 
 ---
 
@@ -172,9 +183,9 @@ npm install && npm run dev
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | Render PostgreSQL URL | `postgresql://user:pass@...render.com/db` |
+| `DATABASE_URL` | Render PostgreSQL URL | `postgresql://neondb_owner:npg_pYKF58nvkMSm@ep-nameless-breeze-aos2r6sq-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require` |
 | `JWT_SECRET` | Random secret string | *(ไม่ระบุ)* |
-| `CORS_ORIGIN` | Frontend URL | `https://your-app.vercel.app` |
+| `CORS_ORIGIN` | Frontend URL | `https://restaurant-frontend-delta-inky.vercel.app` |
 
 ### Render PostgreSQL Database Setup
 1. ไปที่ https://dashboard.render.com → Databases → New PostgreSQL
@@ -185,7 +196,7 @@ npm install && npm run dev
 ### Vercel Deployment (Frontend)
 1. Import repo → Root Directory: `frontend`
 2. Framework: Vite
-3. Env: `VITE_API_URL=https://your-backend.onrender.com/api`
+3. Env: `VITE_API_URL=https://restaurant-backend-ia1q.onrender.com`
 
 ### Render Deployment (Backend + Database)
 1. สร้าง PostgreSQL database บน Render (ตามขั้นตอนด้านบน)
@@ -208,11 +219,11 @@ npm install && npm run dev
 
 | Test | URL | Result |
 |------|-----|--------|
-| Health | GET /api/health | ✅/❌ |
-| Login | POST /api/auth/login | ✅/❌ |
-| Add Menu | POST /api/menu | ✅/❌ |
-| Open Order | POST /api/orders | ✅/❌ |
-| Payment | POST /api/payments | ✅/❌ |
+| Health | GET /api/health | ✅ |
+| Login | POST /api/auth/login | ✅ |
+| Add Menu | POST /api/menu | ✅ |
+| Open Order | POST /api/orders | ✅ |
+| Payment | POST /api/payments | ✅ |
 
 ---
 

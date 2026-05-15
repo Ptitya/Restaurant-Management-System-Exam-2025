@@ -35,10 +35,10 @@
 
 | Service            | URL                                      | Status |
 |--------------------|------------------------------------------|--------|
-| Frontend (Vercel)  | `https://[your-app].vercel.app`          | ⬜     |
-| Backend (Render)   | `https://[your-api].onrender.com`        | ⬜     |
-| API Health Check   | `https://[your-api].onrender.com/api/health` | ⬜ |
-| Database (Neon)    | `postgresql://...@...neon.tech/...`      | ⬜     |
+| Frontend (Vercel)  | `https://restaurant-frontend-delta-inky.vercel.app`          | ✅     |
+| Backend (Render)   | `https://restaurant-backend-ia1q.onrender.com`        | ✅     |
+| API Health Check   | `https://restaurant-backend-ia1q.onrender.com/api/health` | ✅ |
+| Database (Neon)    | `postgresql://neondb_owner:npg_pYKF58nvkMSm@ep-nameless-breeze-aos2r6sq-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`      | ✅     |
 
 ---
 
@@ -62,7 +62,11 @@
 | Feature       | เหตุผลที่ไม่ทดสอบ |
 |---------------|--------------------|
 | <!-- ตัวอย่าง --> Performance Load Test (JMeter) | ไม่อยู่ในขอบเขตของข้อสอบนี้ |
-| <!-- เพิ่มเติม --> | |
+| <!-- เพิ่มเติม --> Security Penetration Test | การเจาะระบบต้องใช้เครื่องมือและทีมเฉพาะ ไม่ครอบคลุมการสอบ |
+| <!-- เพิ่มเติม --> Cloud Deployment (Production) | แม้มีการใช้ Neon/Vercel แต่การสอบไม่ครอบคลุมการ deploy แบบ production-scale หรือ multi-cloud integration |
+| <!-- เพิ่มเติม --> Third-Party Payment Gateway | ใช้ mock data ไม่เชื่อมต่อระบบจริง |
+| <!-- เพิ่มเติม --> Data Migration | ไม่ครอบคลุมการย้ายข้อมูลจากระบบเก่าเข้าสู่ระบบใหม่ |
+| <!-- เพิ่มเติม --> Backup & Disaster Recovery | การสอบไม่ทดสอบการกู้คืนระบบหรือการจัดการเมื่อระบบล่ม |
 
 ---
 
@@ -113,7 +117,9 @@
 |---|------------------------|--------------------------|----------------|
 | 1 | Payment (ชำระเงิน)      | ร้านไม่สามารถรับเงินได้ ลูกค้ารอนาน เสียรายได้โดยตรง | Critical |
 | 2 | Order (รับออเดอร์)      | ออเดอร์ไม่ถึงครัว อาหารไม่ถูกจัดเตรียม ลูกค้าไม่พอใจ | High |
-| <!-- เพิ่มอย่างน้อย 2 รายการ --> | | | |
+| 3 | Inventory (สต๊อกสินค้า)      | สต๊อกไม่อัปเดต ทำให้วัตถุดิบหมดโดยไม่รู้ หรือขายเกินสต๊อก | High |
+| 4 | Authentication/Login      | พนักงานเข้าระบบไม่ได้ หรือมีการเข้าถึงโดยไม่ได้รับอนุญาต | Critical |
+| 5 | Table Management (การจัดการโต๊ะ)     | โต๊ะไม่ถูกจองหรือปล่อยว่างผิดพลาด ทำให้ลูกค้ารอนานหรือเกิดความสับสน | Medium |
 
 ---
 
@@ -332,8 +338,8 @@ npm run dev
 
 | ทดสอบ | URL | ผลลัพธ์ที่คาดหวัง | ผ่าน/ไม่ผ่าน |
 |-------|-----|-------------------|--------------|
-| Backend Health | `http://localhost:3001/api/health` | `{"status":"ok"}` | ⬜ |
-| Frontend Login | `http://localhost:5173` | หน้า Login แสดงผลสำเร็จ | ⬜ |
+| Backend Health | `http://localhost:3001/api/health` | `{"status":"ok"}` | ✅ |
+| Frontend Login | `http://localhost:5173` | หน้า Login แสดงผลสำเร็จ | ✅ |
 
 #### หลักฐาน (On-Premises)
 
@@ -368,8 +374,8 @@ docker compose up --build
 
 | ทดสอบ | URL | ผลลัพธ์ที่คาดหวัง | ผ่าน/ไม่ผ่าน |
 |-------|-----|-------------------|--------------|
-| Backend Health | `http://localhost:3001/api/health` | `{"status":"ok"}` | ⬜ |
-| Frontend       | `http://localhost:80` | หน้า Login แสดงผลสำเร็จ | ⬜ |
+| Backend Health | `http://localhost:3001/api/health` | `{"status":"ok"}` | ✅ |
+| Frontend       | `http://localhost:80` | หน้า Login แสดงผลสำเร็จ | ✅ |
 
 #### หลักฐาน (Staging)
 
@@ -431,15 +437,18 @@ Build Command:  npm run build
 
 | # | Feature          | คำสั่ง / ขั้นตอน                              | Expected               | หลักฐาน | ผ่าน/ไม่ผ่าน |
 |---|------------------|-----------------------------------------------|------------------------|---------|--------------|
-| 1 | Health Check     | `GET /api/health`                             | `{"status":"ok"}`      | 📸      | ⬜           |
-| 2 | Login            | Login ด้วย admin บน Frontend URL              | เข้าระบบสำเร็จ        | 📸      | ⬜           |
-| 3 | Open Order & Add | เปิดโต๊ะ → เพิ่มสินค้า → Confirm             | ออเดอร์ถูกบันทึก      | 📸      | ⬜           |
-| 4 | Payment          | ชำระเงิน → ตรวจสอบ change                    | คำนวณเงินทอนถูกต้อง   | 📸      | ⬜           |
+| 1 | Health Check     | `GET /api/health`                             | `{"status":"ok"}`      | 📸      | ✅ ผ่าน          |
+| 2 | Login            | Login ด้วย admin บน Frontend URL              | เข้าระบบสำเร็จ        | 📸      | ✅ ผ่าน         |
+| 3 | Open Order & Add | เปิดโต๊ะ → เพิ่มสินค้า → Confirm             | ออเดอร์ถูกบันทึก      | 📸      | ✅ ผ่าน         |
+| 4 | Payment          | ชำระเงิน → ตรวจสอบ change                    | คำนวณเงินทอนถูกต้อง   | 📸      | ✅ ผ่าน      |
 
-**Production Smoke Test ผ่าน: ___ / 4 รายการ**
+**Production Smoke Test ผ่าน: 4 / 4 รายการ**
 
 > 📸 (วางภาพหน้าจอหลักฐานแต่ละ Feature)
-
+![alt text](image3.png)
+![alt text](image4.png)
+![alt text](image5.png)
+![alt text](image6.png)
 ---
 
 ## CI/CD Pipeline + Newman Pass Rate
