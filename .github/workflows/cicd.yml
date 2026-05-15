@@ -2,19 +2,18 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     services:
-      # สร้าง Database ชั่วคราวสำหรับการเทสใน Pipeline
       postgres:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: password
+          POSTGRES_DB: rms_db
         ports:
           - 5432:5432
         options: >-
@@ -31,35 +30,42 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
 
       - name: Install dependencies
+        working-directory: ./backend
         run: npm install
 
       - name: Generate Prisma Client
+        working-directory: ./backend
         run: npx prisma generate
 
-      - name: Run Database Push (Migrate)
-        run: npx prisma db push
+      - name: Run Database Push
+        working-directory: ./backend
+        run: npx prisma db push --accept-data-loss
         env:
           DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
 
       - name: Run Unit Tests (Vitest)
+        working-directory: ./backend
         run: npm run test
         env:
           DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
 
-      - name: Start Backend Server
-        # ใช้เครื่องมือ wait-on เพื่อรอให้ Server พร้อมก่อนค่อยรัน Newman
+      - name: Start Server and Run Newman
+        working-directory: ./backend
         run: |
+          # 1. รัน Server ไว้ที่ background
           npm run dev & 
-          npx wait-on http://localhost:3001/api/health --timeout 60000
-        env:
-          DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
-          JWT_SECRET: "test-secret-key"
-
-      - name: Run Newman Tests
-        run: |
+          
+          # 2. รอจนกว่า Server จะพร้อม (ตรวจสอบจาก endpoint login หรือ health)
+          npx wait-on http://localhost:3001/api/auth/login --timeout 60000
+          
+          # 3. รัน Newman (ตรวจสอบ path ไฟล์ json ให้ถูกต้อง)
           npx newman run tests/postman/RMS-TestSuite-v2.json \
             -e tests/postman/env-local.json \
-            --reporters cli,json \
-            --reporter-json-export newman-report.json
+            --reporters cli
+        env:
+          DATABASE_URL: "postgresql://neondb_owner:npg_pYKF58nvkMSm@ep-nameless-breeze-aos2r6sq-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+          JWT_SECRET: "rms-dev-secret-key-change-in-production"
