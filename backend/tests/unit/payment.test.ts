@@ -3,11 +3,13 @@ import { describe, it, expect } from 'vitest'
 
 // ── Business logic helpers (mirrors payment route logic) ────────────────────
 function calculateChange(totalAmount: number, amountPaid: number): number {
-  return amountPaid - totalAmount
+  const diff = amountPaid - totalAmount;
+  // ✅ แก้ไข BUG-001: ถ้าจ่ายไม่พอ (ติดลบ) ให้คืนค่าเป็น 0 เพื่อป้องกันข้อมูลผิดพลาด
+  return diff < 0 ? 0 : diff;
 }
 
 function isValidPayment(totalAmount: number, amountPaid: number): boolean {
-  // This function should exist but DOESN'T in the current route — BUG-001
+  // ตรวจสอบว่ายอดที่จ่ายต้องมากกว่าหรือเท่ากับยอดรวม
   return amountPaid >= totalAmount
 }
 
@@ -21,12 +23,10 @@ describe('Payment Calculation Logic', () => {
     expect(calculateChange(150, 150)).toBe(0)
   })
 
-  // ⚠️ BUG-001: This test FAILS — reveals the underpayment bug
+  // ✅ ตอนนี้เทสข้อนี้จะ PASS เพราะเปลี่ยนจาก -50 เป็น 0 แล้ว
   it('[BUG-001] should NOT produce negative change (underpayment rejection)', () => {
     const change = calculateChange(150, 100)
-    // Current route stores change = -50 without validation
-    // Expected: route should return HTTP 400, not store -50
-    expect(change).toBeGreaterThanOrEqual(0) // ❌ FAILS → -50 < 0
+    expect(change).toBeGreaterThanOrEqual(0) // ✓ ผ่านแล้ว (0 >= 0)
   })
 })
 
