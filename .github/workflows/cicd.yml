@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      # สร้าง Database จำลองสำหรับทดสอบ
       postgres:
         image: postgres:15
         env:
@@ -27,7 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -38,33 +37,22 @@ jobs:
         working-directory: ./backend
         run: npm install
 
-      - name: Generate Prisma Client
+      - name: Generate Prisma client
         working-directory: ./backend
         run: npx prisma generate
 
-      - name: Run Database Push
-        working-directory: ./backend
-        run: npx prisma db push --accept-data-loss
-        env:
-          DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
-
-      - name: Run Unit Tests (Vitest)
+      - name: Run backend tests
         working-directory: ./backend
         run: npm run test
         env:
           DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
 
-      # --- ขั้นตอนรัน NEWMAN ---
+      # --- 🚀 ส่วนของ NEWMAN อยู่ตรงนี้ครับ ---
       - name: Start Server and Run Newman
         working-directory: ./backend
         run: |
-          # 1. รัน Server ไว้ที่ background และเก็บ Log ไว้ดูถ้าพัง
-          npm run dev > server.log 2>&1 & 
-          
-          # 2. รอจนกว่า Port 3001 จะเปิด (ใช้ tcp จะชัวร์กว่า http)
+          npm run dev > server.log 2>&1 &
           npx wait-on tcp:3001 --timeout 60000
-          
-          # 3. รัน Newman (ตรวจสอบ Path ไฟล์ .json ให้ตรงกับในโฟลเดอร์ backend)
           npx newman run tests/postman/RMS-TestSuite-v2.json \
             -e tests/postman/env-local.json \
             --reporters cli
@@ -73,7 +61,16 @@ jobs:
           JWT_SECRET: "rms-dev-secret-key-change-in-production"
           PORT: 3001
 
-      # ถ้าเทสไม่ผ่าน ให้พ่น Log ของ Server ออกมาดูว่า Error อะไร
-      - name: Debug Server Log on Failure
-        if: failure()
-        run: cat backend/server.log
+      # ส่วนของ Frontend รันต่อท้าย
+      - name: Setup Node.js for frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Run frontend build
+        working-directory: ./frontend
+        run: npm run build
