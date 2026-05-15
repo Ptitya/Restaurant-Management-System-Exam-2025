@@ -179,7 +179,8 @@ Run Date:   2026-05-15 19:37
 **Pass Rate:** 22 / 26 (84.61%)  
 **Newman Report (HTML):** `./tests/reports/newman-report.html`
 
-> 📸 วางภาพหน้าจอผลการรัน Newman ที่นี่ ![alt text](image10.png)
+> 📸 วางภาพหน้าจอผลการรัน Newman ที่นี่ 
+![alt text](image10.png)
 
 ---
 
@@ -211,7 +212,6 @@ cd backend && npm audit --audit-level=moderate
 | flatted | GHSA-25h7-pfq9-p65fHigh | High | <=3.4.1 | >= 3.4.2 | Fix available via --force |
 | node-forge | GHSA-554w-wpv2-vw27High | High | <=1.3.3 | >= 1.3.4 | Fix available via --force |
 | underscore | GHSA-qpx9-hpmf-5gmwHigh | High | <=1.13.7 | >= 1.13.8 | Fix available via --force |
-| esbuild | GHSA-67mh-4wv8-2f99 |	Moderate	| <= 0.24.2 |	>= 0.25.0	 | Requires Vitest update |
 
 **แก้ไขด้วย:**
 ```bash
@@ -265,7 +265,8 @@ cd frontend && npm audit --audit-level=moderate
 
 #### Evidence
 > 📸 วางภาพหน้าจอที่นี่  
-> `![BUG-001 Screenshot](./tests/reports/bug-001.png)`![alt text](image7.png)
+> `![BUG-001 Screenshot](./tests/reports/bug-001.png)`
+![alt text](image7.png)
 
 #### Business Impact
 > ทำให้เกิดความเสี่ยงที่ร้านจะเสียรายได้หากพนักงานเข้าใจผิดว่าทำรายการสำเร็จ ทั้งที่ลูกค้าจ่ายเงินไม่ครบ และระบบจัดการสถานะออเดอร์ผิดพลาด
@@ -294,7 +295,8 @@ cd frontend && npm audit --audit-level=moderate
 
 #### Evidence
 > 📸 วางภาพหน้าจอที่นี่  
-> `![BUG-002 Screenshot](./tests/reports/bug-002.png)`![alt text](image8.png)
+> `![BUG-002 Screenshot](./tests/reports/bug-002.png)`
+![alt text](image8.png)
 
 #### Business Impact
 > พนักงานไม่สามารถเปิดออเดอร์ใหม่ให้ลูกค้าได้ แม้จะเป็นการเริ่มรันระบบใหม่ ทำให้ระบบการสั่งอาหารทั้งหมดหยุดชะงัก และลูกค้าไม่สามารถสั่งอาหารได้
@@ -321,7 +323,8 @@ cd frontend && npm audit --audit-level=moderate
 
 #### Evidence
 > 📸 วางภาพหน้าจอที่นี่  
-> `![BUG-003 Screenshot](./tests/reports/bug-003.png)`![alt text](image9.png)
+> `![BUG-003 Screenshot](./tests/reports/bug-003.png)`
+![alt text](image9.png)
 
 #### Business Impact
 > ผู้ไม่หวังดีอาจใช้ช่องโหว่นี้ในการดึงข้อมูลสำคัญออกจากฐานข้อมูล (Data Leakage) เช่น ข้อมูลพนักงาน ยอดขาย หรืออาจทำการลบข้อมูลทั้งหมดในระบบ (Drop Table) ทำให้ธุรกิจหยุดชะงักและเสียชื่อเสียงอย่างรุนแรง
@@ -504,14 +507,17 @@ Build Command:  npm run build
 
 | Metric          | ค่า    |
 |-----------------|--------|
-| Total Tests     | ??     |
-| Tests Passed    | ??     |
-| Tests Failed    | ??     |
-| **Pass Rate**   | **??%** |
+| Total Tests     | 21     |
+| Tests Passed    | 21     |
+| Tests Failed    | 0     |
+| **Pass Rate**   | **100%** |
 
 > 📸 **ภาพหน้าจอ GitHub Actions Pipeline สำเร็จ**
 >
 > (วางภาพที่นี่)
+![alt text](image11.png)
+![alt text](image12.png)
+![alt text](image13.png)
 
 ---
 
