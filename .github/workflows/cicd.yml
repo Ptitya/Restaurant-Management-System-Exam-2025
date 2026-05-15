@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      # สร้าง Database จำลองภายใน Runner (เสถียรที่สุดสำหรับ CI)
       postgres:
         image: postgres:15
         env:
@@ -34,7 +33,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './backend/package-lock.json'
 
-      - name: Install dependencies
+      # --- BACKEND SECTION ---
+      - name: Install backend dependencies
         working-directory: ./backend
         run: npm install
 
@@ -57,23 +57,31 @@ jobs:
       - name: Start Server and Run Newman
         working-directory: ./backend
         run: |
-          # 1. รัน Server ไว้ที่ background และเก็บ Log ลงไฟล์เพื่อใช้ Debug
+          # รัน Backend ในพื้นหลัง
           npm run dev > server.log 2>&1 & 
           
-          # 2. รอจนกว่า Port 3001 จะเปิด (ใช้ tcp จะชัวร์กว่า http ใน CI)
+          # รอให้ Port 3001 พร้อมใช้งาน
           npx wait-on tcp:3001 --timeout 60000
           
-          # 3. รัน Newman (ตรวจสอบ Path ของไฟล์ให้ตรงกับใน Repo)
+          # รัน Newman (เช็ค Path ไฟล์ .json ให้ตรงกับใน GitHub ของเนมนะ)
           npx newman run tests/postman/RMS-TestSuite-v2.json \
             -e tests/postman/env-local.json \
             --reporters cli
         env:
-          # ✅ สำคัญ: ต้องใช้ localhost เหมือนกันทุกขั้นตอนเพื่อให้คุยกับ Service ด้านบนได้
           DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
           JWT_SECRET: "rms-dev-secret-key-change-in-production"
           PORT: 3001
 
-      # ขั้นตอนพิเศษ: ถ้าพัง ให้เอา Log ของ Server ออกมาโชว์ว่าติดตรงไหน
+      # --- FRONTEND SECTION ---
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Run frontend build
+        working-directory: ./frontend
+        run: npm run build
+
+      # --- DEBUG SECTION ---
       - name: Debug Server Log on Failure
         if: failure()
         run: cat backend/server.log
