@@ -4,6 +4,36 @@ import { authenticate } from '../middleware/auth'
 
 const router = Router()
 
+// ✅ GET /api/orders — ต้องใช้ authenticate และคืน 401 ถ้าไม่มี token
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const orders = await prisma.order.findMany({
+      include: { items: { include: { menuItem: true } }, table: true }
+    })
+    res.json(orders)
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message })
+  }
+})
+
+// ✅ GET /api/orders/:id — รายละเอียดออเดอร์
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id)
+    if (isNaN(id)) { res.status(400).json({ error: 'Invalid ID' }); return }
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: { include: { menuItem: true } }, table: true }
+    })
+
+    if (!order) { res.status(404).json({ error: 'Order not found' }); return }
+    res.json(order)
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message })
+  }
+})
+
 // POST /api/orders — เปิดโต๊ะใหม่
 router.post('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
@@ -68,7 +98,6 @@ router.post('/:id/items', authenticate, async (req: Request, res: Response): Pro
       return newItem
     })
 
-    // ✅ คืนค่า 201 ตามที่ Newman คาดหวัง
     res.status(201).json(item)
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
@@ -90,7 +119,6 @@ router.put('/:id/confirm', authenticate, async (req: Request, res: Response): Pr
 
     const updated = await prisma.order.update({ where: { id: orderId }, data: { status: 'confirmed' } })
 
-    // ✅ คืนค่า 200 OK ตามที่ Newman คาดหวัง
     res.status(200).json(updated)
   } catch (err) {
     res.status(500).json({ error: (err as Error).message })
