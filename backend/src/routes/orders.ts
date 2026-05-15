@@ -4,10 +4,41 @@ import { authenticate, requireRole } from '../middleware/auth'
 
 const router = Router()
 
-// ... (GET /tables และ GET / ตรงนี้เหมือนเดิมครับ)
+// --- ส่วนที่เพิ่มใหม่เพื่อให้ Test ผ่าน ---
 
-// POST /api/orders — open new order
-// ✅ ปรับปรุง BUG-002 [Double Booking] ให้รองรับ Newman
+// GET /api/orders - ดึงรายการออเดอร์ทั้งหมด
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
+    try {
+        const orders = await prisma.order.findMany({
+            include: { items: { include: { menuItem: true } }, table: true }
+        })
+        res.json(orders)
+    } catch (err) {
+        res.status(500).json({ error: (err as Error).message })
+    }
+})
+
+// GET /api/orders/:id - ดึงรายละเอียดออเดอร์รายใบ
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
+    try {
+        const id = Number(req.params.id)
+        if (isNaN(id)) { res.status(400).json({ error: 'Invalid ID' }); return }
+
+        const order = await prisma.order.findUnique({
+            where: { id },
+            include: { items: { include: { menuItem: true } }, table: true }
+        })
+
+        if (!order) { res.status(404).json({ error: 'Order not found' }); return }
+        res.json(order)
+    } catch (err) {
+        res.status(500).json({ error: (err as Error).message })
+    }
+})
+
+// --- ส่วนเดิมที่เนมเขียนไว้ (พี่ปรับปรุง Logic เล็กน้อย) ---
+
+// POST /api/orders — เปิดโต๊ะใหม่
 router.post('/', authenticate, async (req: Request, res: Response): Promise<void> => {
     try {
         const { tableId, note } = req.body as { tableId?: number; note?: string }
@@ -16,7 +47,6 @@ router.post('/', authenticate, async (req: Request, res: Response): Promise<void
         const table = await prisma.restaurantTable.findUnique({ where: { id: Number(tableId) } })
         if (!table) { res.status(404).json({ error: 'Table not found' }); return }
 
-        // ค้นหาออเดอร์ที่ยังค้างอยู่ (เปิด หรือ ยืนยันแล้ว)
         const existing = await prisma.order.findFirst({
             where: {
                 tableId: Number(tableId),
@@ -25,12 +55,10 @@ router.post('/', authenticate, async (req: Request, res: Response): Promise<void
         })
 
         if (existing) {
-            // ✅ คืน 409 ตามที่ TC-015 คาดหวัง
             res.status(409).json({ error: 'Table already has an active order' });
             return
         }
 
-        // ใช้ Transaction เพื่อให้แน่ใจว่าสร้าง Order พร้อมเปลี่ยนสถานะโต๊ะ
         const [order] = await prisma.$transaction([
             prisma.order.create({
                 data: {
@@ -52,8 +80,7 @@ router.post('/', authenticate, async (req: Request, res: Response): Promise<void
     }
 })
 
-// POST /api/orders/:id/items
-// ✅ ปรับปรุง TC-005 และแก้ปัญหา URL/null
+// POST /api/orders/:id/items — เพิ่มอาหารลงในบิล
 router.post('/:id/items', authenticate, async (req: Request, res: Response): Promise<void> => {
     try {
         const orderId = Number(req.params.id)
@@ -84,23 +111,19 @@ router.post('/:id/items', authenticate, async (req: Request, res: Response): Pro
         const subtotal = unitPrice * qty
 
         const item = await prisma.$transaction(async (tx) => {
-            // 1. สร้าง OrderItem
             const newItem = await tx.orderItem.create({
                 data: { orderId, menuItemId: menuItem.id, quantity: qty, unitPrice, subtotal },
                 include: { menuItem: true },
             })
 
-            // 2. หักสต็อก
             await tx.menuItem.update({
                 where: { id: Number(menuItemId) },
                 data: { [(menuItem as any).stock !== undefined ? 'stock' : 'quantity']: { decrement: qty } }
             })
 
-            // 3. คำนวณยอดรวมใหม่
             const allItems = await tx.orderItem.findMany({ where: { orderId } })
             const total = allItems.reduce((s: number, i: any) => s + Number(i.subtotal), 0)
             
-            // 4. อัปเดตยอดรวมใน Order
             await tx.order.update({ where: { id: orderId }, data: { totalAmount: total } })
             
             return newItem
@@ -112,7 +135,7 @@ router.post('/:id/items', authenticate, async (req: Request, res: Response): Pro
     }
 })
 
-// PUT /api/orders/:id/confirm
+// PUT /api/orders/:id/confirm — ยืนยันออเดอร์
 router.put('/:id/confirm', authenticate, async (req: Request, res: Response): Promise<void> => {
     try {
         const orderId = Number(req.params.id)
@@ -124,8 +147,6 @@ router.put('/:id/confirm', authenticate, async (req: Request, res: Response): Pr
         
         if (!order) { res.status(404).json({ error: 'Order not found' }); return }
         if (order.status !== 'open') { res.status(400).json({ error: 'Order is not open' }); return }
-
-        // ✅ แก้ไข TC-010: ห้ามยืนยันถ้าไม่มีอาหารในบิล
         if (!order.items || order.items.length === 0) {
             res.status(400).json({ error: 'Cannot confirm empty order' });
             return
@@ -140,7 +161,5 @@ router.put('/:id/confirm', authenticate, async (req: Request, res: Response): Pr
         res.status(500).json({ error: (err as Error).message })
     }
 })
-
-// ... (PUT /cancel ตรงนี้โอเคแล้วครับ)
 
 export default router

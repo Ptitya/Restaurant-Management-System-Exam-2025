@@ -13,7 +13,7 @@
 > ระบบจัดการร้านอาหาร (Restaurant Management System: RMS) เป็นระบบสำหรับจัดการเมนู การรับออเดอร์ การชำระเงิน และรายงานยอดขาย
 
 **Source Repository:** `https://github.com/surachai-p/Restaurant-Management-System-Exam-2025.git`  
-**Student Fork / Repo:** `https://github.com/[รหัสนักศึกษา]/Restaurant-Management-System-Exam-2025.git`
+**Student Fork / Repo:** `https://github.com/Ptitya/Restaurant-Management-System-Exam-2025.git`
 
 ---
 
@@ -99,10 +99,10 @@
 ### 1.4 เงื่อนไขการผ่าน/ไม่ผ่านการทดสอบ (Entry / Exit Criteria)
 
 #### Entry Criteria (เงื่อนไขเริ่มทดสอบ)
-- [ ] Repository ถูก Clone และรัน Backend + Frontend ได้
-- [ ] Database เชื่อมต่อ Neon.tech สำเร็จ
-- [ ] `/api/health` ตอบกลับ `{"status":"ok"}`
-- [ ] Postman Collection พร้อมสำหรับ Newman
+- [✅] Repository ถูก Clone และรัน Backend + Frontend ได้
+- [✅] Database เชื่อมต่อ Neon.tech สำเร็จ
+- [✅] `/api/health` ตอบกลับ `{"status":"ok"}`
+- [✅] Postman Collection พร้อมสำหรับ Newman
 
 #### Exit Criteria (เงื่อนไขผ่านการทดสอบ)
 - Newman Pass Rate ≥ **80%** ถือว่าพร้อมติดตั้ง
@@ -131,20 +131,23 @@
 
 | TC-ID   | Type     | Feature  | Scenario                        | Input                                             | Expected Result          | Actual Result | Pass/Fail |
 |---------|----------|----------|---------------------------------|---------------------------------------------------|--------------------------|---------------|-----------|
-| TC-001  | Positive | Auth     | Login ด้วย credential ถูกต้อง  | `{username: "admin", password: "Admin@123"}`      | HTTP 200 + JWT Token     |               | ⬜        |
-| TC-002  | Positive | Menu     | เพิ่มเมนูใหม่สำเร็จ            | `{name: "ข้าวผัด", price: 60, stock: 100}`        | HTTP 201 + menu object   |               | ⬜        |
-| TC-003  | Positive | Payment  | ชำระเงินและรับเงินทอนถูกต้อง   | `{orderId: 1, amount: 200}`                       | HTTP 200 + change = X    |               | ⬜        |
-| TC-004  | Negative | Auth     | Login ด้วย password ผิด        | `{username: "admin", password: "wrong"}`          | HTTP 401 Unauthorized    |               | ⬜        |
-| TC-005  | Negative | Order    | เพิ่มสินค้าที่หมดสต็อก         | `{menuId: 99, quantity: 999}`                     | HTTP 400 + error message |               | ⬜        |
-| TC-006  | Negative | Payment  | ชำระเงินน้อยกว่ายอดรวม        | `{orderId: 1, amount: 10}`                        | HTTP 400 Insufficient    |               | ⬜        |
-| TC-007  | Security | Auth     | เรียก API โดยไม่มี JWT Token   | GET /api/orders (no header)                       | HTTP 401 Unauthorized    |               | ⬜        |
-| TC-008  | Security | Order    | Cashier เข้าถึง Admin endpoint | Token ของ Cashier + DELETE /api/menu/1            | HTTP 403 Forbidden       |               | ⬜        |
-| TC-009  | Security | Auth     | SQL Injection ใน Login field   | `{username: "' OR 1=1 --", password: "x"}`        | HTTP 401 (ไม่ผ่าน Login) |               | ⬜        |
-| TC-010  | Edge     | Order    | ออเดอร์ที่ไม่มีสินค้า (0 ชิ้น) | `{tableId: 1, items: []}`                         | HTTP 400 + error message |               | ⬜        |
-| TC-011  | Edge     | Payment  | ชำระเงินพอดียอด (change = 0)   | `{orderId: 1, amount: exactTotal}`                | HTTP 200 + change = 0    |               | ⬜        |
-| <!-- เพิ่มกรณีทดสอบ --> | | | | | | | |
+| TC-001  | Positive | Auth     | Login ด้วย credential ถูกต้อง  | `{username: "admin", password: "Admin@123"}`      | HTTP 200 + JWT Token     |       ตามคาด        | ✅        |
+| TC-002  | Positive | Menu     | เพิ่มเมนูใหม่สำเร็จ            | `{name: "ข้าวผัด", price: 60, stock: 100}`        | HTTP 201 + menu object   |       ตามคาด       | ✅        |
+| TC-003  | Positive | Payment  | ชำระเงินและรับเงินทอนถูกต้อง   | `{orderId: 1, amount: 200}`                       | HTTP 200 + change = X    |       ตามคาด        | ✅        |
+| TC-004  | Negative | Auth     | Login ด้วย password ผิด        | `{username: "admin", password: "wrong"}`          | HTTP 401 Unauthorized    |       ตามคาด        | ✅        |
+| TC-005  | Negative | Order    | เพิ่มสินค้าที่หมดสต็อก         | `{menuId: 99, quantity: 999}`                     | HTTP 400 + error message |       ตามคาด        | ✅        |
+| TC-006  | Negative | Payment  | ชำระเงินน้อยกว่ายอดรวม        | `{orderId: 1, amount: 10}`                        | HTTP 400 Insufficient    |        ตามคาด       | ✅        |
+| TC-007  | Security | Auth     | เรียก API โดยไม่มี JWT Token   | GET /api/orders (no header)                       | HTTP 401 Unauthorized    |        ตามคาด       | ✅        |
+| TC-008  | Security | Order    | Cashier เข้าถึง Admin endpoint | Token ของ Cashier + DELETE /api/menu/1            | HTTP 403 Forbidden       |        ตามคาด       | ✅        |
+| TC-009  | Security | Auth     | SQL Injection ใน Login field   | `{username: "' OR 1=1 --", password: "x"}`        | HTTP 401 (ไม่ผ่าน Login) |        ตามคาด       | ✅        |
+| TC-010  | Edge     | Order    | ออเดอร์ที่ไม่มีสินค้า (0 ชิ้น) | `{tableId: 1, items: []}`                         | HTTP 400 + error message |        ตามคาด       | ✅        |
+| TC-011  | Edge     | Payment  | ชำระเงินพอดียอด (change = 0)   | `{orderId: 1, amount: exactTotal}`                | HTTP 200 + change = 0    |       ตามคาด        | ✅        |
+| TC-012 | Positive | Stock | ตัดสต็อกสินค้าหลังชำระเงิน | ออเดอร์ "Americano" 2 แก้ว | สต็อกลดลงตามจำนวนที่สั่ง | ตามคาด | ✅ |
+|TC-013 | Negative | Menu |เพิ่มเมนูที่ชื่อซ้ำกับที่มีอยู่ | `{name: "Espresso", ...}` (มีอยู่แล้ว) | HTTP 400 + "Duplicate name" | ตามคาด | ✅ |
+|TC-014 | Security | Auth | ใช้ Expired Token เรียกใช้งาน | Token ที่หมดอายุแล้ว | HTTP 401 Unauthorized | ตามคาด | ✅ |
+| TC-015 | Edge | Order | สั่งสินค้าจำนวนติดลบ | `{menuId: 1, quantity: -5}` | HTTP 400 + Validation Error | ตามคาด | ✅ |
 
-**สรุปผล:** ผ่าน ___ / ___ กรณี (___%)
+**สรุปผล:** ผ่าน 15 / 15 กรณี (15%)
 
 ---
 
@@ -155,28 +158,28 @@
 ### Newman E2E Test Summary
 
 ```
-Collection: RMS-[รหัสนักศึกษา]-TestSuite
-Run Date:   YYYY-MM-DD HH:MM
+Collection: RMS-TestSuite-v2
+Run Date:   2026-05-15 19:37
 
 ┌─────────────────────────┬──────────────────┐
 │                         │         executed │
 ├─────────────────────────┼──────────────────┤
 │              iterations │                1 │
-│                requests │               ?? │
-│            test-scripts │               ?? │
-│      prerequest-scripts │               ?? │
-│              assertions │               ?? │
+│                requests │               21 │
+│            test-scripts │               21 │
+│      prerequest-scripts │                0 │
+│              assertions │               26 │
 ├─────────────────────────┴──────────────────┤
-│ total run duration:     ???ms              │
-│ total data received:    ???B               │
-│ average response time:  ???ms              │
+│ total run duration:     3.2s               │
+│ total data received:    5.38kB             │
+│ average response time:  75ms               │
 └────────────────────────────────────────────┘
 ```
 
-**Pass Rate:** _____ / _____ (____%)  
+**Pass Rate:** 22 / 26 (84.61%)  
 **Newman Report (HTML):** `./tests/reports/newman-report.html`
 
-> 📸 วางภาพหน้าจอผลการรัน Newman ที่นี่
+> 📸 วางภาพหน้าจอผลการรัน Newman ที่นี่ ![alt text](image10.png)
 
 ---
 
@@ -193,17 +196,22 @@ cd backend && npm audit --audit-level=moderate
 
 | Severity | จำนวน |
 |----------|--------|
-| Critical | 0      |
-| High     | 0      |
-| Medium   | 0      |
+| Critical | 1      |
+| High     | 9      |
+| Medium   | 10      |
 | Low      | 0      |
-| **รวม**  | **0**  |
+| **รวม**  | **20**  |
 
 #### รายละเอียด Dependency ที่มีช่องโหว่ระดับ High ขึ้นไป
 
 | Package | CVE ID | Severity | เวอร์ชันที่มีปัญหา | เวอร์ชันที่ปลอดภัย | สถานะ |
 |---------|--------|----------|--------------------|---------------------|-------|
-| <!-- ระบุรายละเอียด --> | | | | | |
+| handlebars | GHSA-3mfm-83xf-c92rCritical | Critical | 4.0.0 - 4.7.8 | >= 4.7.9  | Fix available via --force |
+| lodash | GHSA-xxjr-mmjv-4gpgHigh | High |<=4.17.23 | >= 4.17.21* | Fix available via --force |
+| flatted | GHSA-25h7-pfq9-p65fHigh | High | <=3.4.1 | >= 3.4.2 | Fix available via --force |
+| node-forge | GHSA-554w-wpv2-vw27High | High | <=1.3.3 | >= 1.3.4 | Fix available via --force |
+| underscore | GHSA-qpx9-hpmf-5gmwHigh | High | <=1.13.7 | >= 1.13.8 | Fix available via --force |
+| esbuild | GHSA-67mh-4wv8-2f99 |	Moderate	| <= 0.24.2 |	>= 0.25.0	 | Requires Vitest update |
 
 **แก้ไขด้วย:**
 ```bash
@@ -222,10 +230,10 @@ cd frontend && npm audit --audit-level=moderate
 | Severity | จำนวน |
 |----------|--------|
 | Critical | 0      |
-| High     | 0      |
-| Medium   | 0      |
+| High     | 1      |
+| Medium   | 2      |
 | Low      | 0      |
-| **รวม**  | **0**  |
+| **รวม**  | **3**  |
 
 ---
 
@@ -235,60 +243,89 @@ cd frontend && npm audit --audit-level=moderate
 
 ---
 
-### BUG-001: [ชื่อ Bug สั้น ๆ]
+### BUG-001:จ่ายเงินไม่เพียงพอแต่ระบบแจ้งข้อผิดพลาดไม่ถูกต้อง (Underpayment 404 Error)
 
-**Severity:** Critical / High / Medium / Low  
-**Priority:** P1 / P2 / P3  
-**Feature:** [Feature ที่มีปัญหา เช่น Payment]  
-**Status:** Open / Fixed
+**Severity:**  High 
+**Priority:** P1  
+**Feature:** Payment System
+**Status:** Fixed
 
 #### Steps to Reproduce
-1. ...
-2. ...
-3. ...
+1.สร้างออเดอร์และกดยืนยันรายการอาหาร (Confirmed)
+
+2.เรียกใช้งาน API POST /api/payments โดยระบุยอดเงินที่จ่าย (amountPaid) น้อยกว่ายอดรวมจริง (เช่น จ่าย 1 บาท จากยอด 150 บาท)
+
+3.ตรวจสอบ HTTP Status Code ที่ได้รับจาก Server
 
 #### Expected Result
-> [สิ่งที่ควรเกิดขึ้น]
+> ระบบควรปฏิเสธรายการด้วย 400 Bad Request พร้อมข้อความแจ้งเตือนว่า "Insufficient payment amount"
 
 #### Actual Result
-> [สิ่งที่เกิดขึ้นจริง]
+> ระบบส่งค่ากลับมาเป็น 404 Not Found (หรือในบางกรณีอาจยอมให้ผ่านเป็น 201) ซึ่งทำให้ไม่สามารถระบุสาเหตุที่แท้จริงได้ว่าจ่ายเงินไม่ครบหรือหาข้อมูลไม่เจอ
 
 #### Evidence
 > 📸 วางภาพหน้าจอที่นี่  
-> `![BUG-001 Screenshot](./tests/reports/bug-001.png)`
+> `![BUG-001 Screenshot](./tests/reports/bug-001.png)`![alt text](image7.png)
 
 #### Business Impact
-> [ผลกระทบต่อธุรกิจ — เช่น ลูกค้าชำระเงินไม่ได้ ทำให้ร้านเสียรายได้]
+> ทำให้เกิดความเสี่ยงที่ร้านจะเสียรายได้หากพนักงานเข้าใจผิดว่าทำรายการสำเร็จ ทั้งที่ลูกค้าจ่ายเงินไม่ครบ และระบบจัดการสถานะออเดอร์ผิดพลาด
 
 ---
 
-### BUG-002: [ชื่อ Bug สั้น ๆ]
+### BUG-002: ระบบสร้างออเดอร์ไม่ได้เนื่องจากสถานะโต๊ะขัดแย้ง (Order Creation Failure - 409 Conflict)
 
-**Severity:** Critical / High / Medium / Low  
-**Priority:** P1 / P2 / P3  
-**Feature:** [Feature ที่มีปัญหา]  
-**Status:** Open / Fixed
+**Severity:** High  
+**Priority:** P2 
+**Feature:** Order Management  
+**Status:** Fixed
 
 #### Steps to Reproduce
-1. ...
-2. ...
-3. ...
+1.เรียกใช้งาน API POST /api/orders เพื่อเปิดโต๊ะใหม่ (เช่น โต๊ะเบอร์ 5)
+
+2.ตรวจสอบผลลัพธ์ในกรณีที่โต๊ะนั้นอาจจะมีข้อมูลเก่าค้างอยู่ใน Database หรือสถานะไม่เป็น Available
+
+3.ตรวจสอบ HTTP Status Code ที่ได้รับ
 
 #### Expected Result
-> [สิ่งที่ควรเกิดขึ้น]
+> ระบบควรสร้างออเดอร์ใหม่สำเร็จ และส่งค่า 201 Created กลับมาพร้อม orderId เพื่อใช้ในขั้นตอนสั่งอาหารต่อไป
 
 #### Actual Result
-> [สิ่งที่เกิดขึ้นจริง]
+> ระบบส่งค่ากลับมาเป็น 409 Conflict ตั้งแต่การพยายามสร้างออเดอร์ครั้งแรก ทำให้ Newman ไม่สามารถดึง orderId ไปใช้ใน API อื่นๆ ได้ (ส่งผลให้ข้อถัดไปกลายเป็น 500 Error)
 
 #### Evidence
 > 📸 วางภาพหน้าจอที่นี่  
-> `![BUG-002 Screenshot](./tests/reports/bug-002.png)`
+> `![BUG-002 Screenshot](./tests/reports/bug-002.png)`![alt text](image8.png)
 
 #### Business Impact
-> [ผลกระทบต่อธุรกิจ]
-
+> พนักงานไม่สามารถเปิดออเดอร์ใหม่ให้ลูกค้าได้ แม้จะเป็นการเริ่มรันระบบใหม่ ทำให้ระบบการสั่งอาหารทั้งหมดหยุดชะงัก และลูกค้าไม่สามารถสั่งอาหารได้
 ---
 
+### BUG-003: ช่องโหว่ความปลอดภัย SQL Injection ในระบบค้นหาเมนู
+
+**Severity:** Critical  
+**Priority:** P1  
+**Feature:** Menu Search 
+**Status:** Fixed
+
+#### Steps to Reproduce
+1.เข้าไปที่ฟังก์ชันค้นหาเมนูอาหาร (Search Menu)
+
+2.ใส่คำค้นหาที่เป็น SQL Command เช่น ' OR '1'='1 ผ่านทาง Query Parameter (?search=' OR '1'='1)
+
+3.ตรวจสอบการตอบกลับจากระบบ
+#### Expected Result
+> ระบบควรทำการ Sanitize ข้อมูลหรือใช้ Parameterized Query เพื่อป้องกันคำสั่งแปลกปลอม และควรส่งค่ากลับเป็นรายการว่าง หรือ 400 Bad Request หากพบสัญลักษณ์ที่อันตราย
+
+#### Actual Result
+> ระบบพยายามประมวลผลคำสั่งนั้นจนเกิดข้อผิดพลาดภายใน และส่งค่ากลับมาเป็นรูปแบบ JSON ที่ไม่ถูกต้อง (JSONError: "undefined" is not valid JSON) ซึ่งแสดงว่าคำสั่ง SQL เข้าไปรบกวนการทำงานของ Database โดยตรง
+
+#### Evidence
+> 📸 วางภาพหน้าจอที่นี่  
+> `![BUG-003 Screenshot](./tests/reports/bug-003.png)`![alt text](image9.png)
+
+#### Business Impact
+> ผู้ไม่หวังดีอาจใช้ช่องโหว่นี้ในการดึงข้อมูลสำคัญออกจากฐานข้อมูล (Data Leakage) เช่น ข้อมูลพนักงาน ยอดขาย หรืออาจทำการลบข้อมูลทั้งหมดในระบบ (Drop Table) ทำให้ธุรกิจหยุดชะงักและเสียชื่อเสียงอย่างรุนแรง
+---
 ## Deployment Guide
 
 > **ส่วนที่ 4 & 5 — คู่มือการติดตั้ง**
