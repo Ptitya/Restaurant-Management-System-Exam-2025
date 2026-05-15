@@ -65,10 +65,15 @@ jobs:
     - name: Start Server and Run Newman (E2E)
       working-directory: backend
       run: |
+        # ติดตั้ง wait-on
         npm install wait-on
+        
+        # รัน Server ใน Background และรอให้ Port 3001 พร้อม
         npm run dev > server.log 2>&1 &
         npx wait-on tcp:3001 --timeout 60000
-        npx newman run tests/postman/RMS-TestSuite-v2.json --reporters cli
+        
+        # รัน Newman โดยชี้ Path ไปที่ไฟล์ JSON (ตรวจสอบตัวพิมพ์เล็ก-ใหญ่ให้ตรงกับ Folder จริงนะคั้บ)
+        npx newman run ./tests/postman/RMS-TestSuite-v2.json --reporters cli
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rms_test
         JWT_SECRET: "rms-dev-secret-key-change-in-production"
@@ -88,4 +93,4 @@ jobs:
 
     - name: Run frontend build
       working-directory: frontend
-      run: npm run build 
+      run: npm run build

@@ -39,16 +39,14 @@ jobs:
         working-directory: ./backend
         run: npm install
 
-      # ✅ Step: ตรวจสอบความปลอดภัยของ Dependencies
       - name: Security Audit
         working-directory: ./backend
-        run: npm audit --audit-level=high || true # ใส่ true เพื่อไม่ให้ pipeline หยุดถ้าเจอช่องโหว่ที่ไม่ร้ายแรง
+        run: npm audit --audit-level=high || true 
 
       - name: Generate Prisma client
         working-directory: ./backend
         run: npx prisma generate
 
-      # ✅ Step: เตรียม Database Schema และ Seed ข้อมูลเริ่มต้น
       - name: Setup Database
         working-directory: ./backend
         run: npx prisma db push --force-reset && npx prisma db seed
@@ -65,18 +63,18 @@ jobs:
       - name: Start Server and Run Newman
         working-directory: ./backend
         run: |
-          # 1. ติดตั้ง wait-on เพื่อรอ server พร้อม
+          # 1. ติดตั้ง wait-on
           npm install wait-on
           
           # 2. รัน Server ใน Background
           npm run dev > server.log 2>&1 & 
           
-          # 3. รอจนกว่า Port 3001 จะพร้อมใช้งาน (timeout 60s)
+          # 3. รอจนกว่า Port 3001 จะพร้อมใช้งาน
           npx wait-on tcp:3001 --timeout 60000
           
-          # 4. รัน Newman (ตรวจสอบ path ให้ตรงกับโครงสร้าง folder เนมนะคั้บ)
-          npx newman run tests/postman/RMS-TestSuite-v2.json \
-            --reporters cli
+          # 4. ตรวจสอบ Path และรัน Newman 
+          # พี่ใช้ ./ นำหน้าเพื่อให้มันหาใน working-directory (./backend) ครับ
+          npx newman run ./tests/postman/RMS-TestSuite-v2.json --reporters cli
         env:
           DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
           JWT_SECRET: "rms-dev-secret-key-change-in-production"
@@ -89,4 +87,4 @@ jobs:
 
       - name: Run frontend build
         working-directory: ./frontend
-        run: npm run build 
+        run: npm run build
