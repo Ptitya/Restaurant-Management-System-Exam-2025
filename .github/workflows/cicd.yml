@@ -66,15 +66,18 @@ jobs:
           # 1. ติดตั้ง wait-on
           npm install wait-on
           
-          # 2. รัน Server ใน Background
+          # 2. ตรวจสอบไฟล์ก่อนรัน (ถ้าหาไม่เจอ Step นี้จะฟ้องชัดเจนว่าไฟล์หายไปไหน)
+          echo "Checking file location..."
+          ls -R $GITHUB_WORKSPACE/backend/tests/postman/
+          
+          # 3. รัน Server ใน Background
           npm run dev > server.log 2>&1 & 
           
-          # 3. รอจนกว่า Port 3001 จะพร้อมใช้งาน
+          # 4. รอจนกว่า Port 3001 จะพร้อมใช้งาน
           npx wait-on tcp:3001 --timeout 60000
           
-          # 4. ตรวจสอบ Path และรัน Newman 
-          # พี่ใช้ ./ นำหน้าเพื่อให้มันหาใน working-directory (./backend) ครับ
-          npx newman run ./tests/postman/RMS-TestSuite-v2.json --reporters cli
+          # 5. รัน Newman โดยใช้ Absolute Path (ชัวร์ที่สุด)
+          npx newman run $GITHUB_WORKSPACE/backend/tests/postman/RMS-TestSuite-v2.json --reporters cli
         env:
           DATABASE_URL: "postgresql://postgres:password@localhost:5432/rms_db"
           JWT_SECRET: "rms-dev-secret-key-change-in-production"
